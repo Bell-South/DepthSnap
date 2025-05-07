@@ -1,0 +1,22 @@
+DepthSnap/
+├── calibration/
+│   ├── __init__.py
+│   ├── gopro_calibration.py
+│   ├── aruco_calibration.py
+│   └── default_params.py
+├── depth_estimation/
+│   ├── __init__.py
+│   ├── stereo_depth.py
+│   ├── mono_depth.py
+│   └── distance_measurement.py
+├── utils/
+│   ├── __init__.py
+│   ├── pattern_generator.py
+│   └── advanced_detection.py
+├── data/
+│   ├── calibration/
+│   └── test_images/
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
