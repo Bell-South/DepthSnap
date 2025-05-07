@@ -51,20 +51,40 @@ def calibrate_cameras(left_images, right_images=None, pattern_size=(7, 7),
             
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Try adaptive preprocessing to enhance chessboard pattern
-        # This helps with challenging lighting or brown/dark chessboards
-        processed_gray = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+        # Apply enhanced detection methods from the working script
+        # 1. Apply bilateral filter to smooth while preserving edges
+        blurred = cv2.bilateralFilter(gray, 9, 75, 75)
+        
+        # 2. Apply adaptive thresholding
+        thresh = cv2.adaptiveThreshold(
+            blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 11, 2
         )
         
-        # Find chessboard corners
-        ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
+        # 3. Invert if needed (depending on which color is predominant)
+        if np.sum(thresh == 0) < np.sum(thresh == 255):
+            thresh = cv2.bitwise_not(thresh)
         
-        # If standard method fails, try with processed image
+        # 4. Apply morphological operations to clean up noise
+        kernel = np.ones((3, 3), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        
+        # Try to find the chessboard corners - first on threshold image
+        ret, corners = cv2.findChessboardCorners(thresh, pattern_size, None)
+        
+        # If that fails, try with enhanced contrast
         if not ret:
+            # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            enhanced = clahe.apply(gray)
+            
+            # Try with enhanced image with special flags
             ret, corners = cv2.findChessboardCorners(
-                processed_gray, pattern_size, 
-                cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
+                enhanced, pattern_size, 
+                cv2.CALIB_CB_ADAPTIVE_THRESH + 
+                cv2.CALIB_CB_NORMALIZE_IMAGE +
+                cv2.CALIB_CB_FAST_CHECK
             )
             
         # If corners found, add to data points
@@ -111,6 +131,107 @@ def calibrate_cameras(left_images, right_images=None, pattern_size=(7, 7),
     img = cv2.imread(left_images[0])
     img_size = (img.shape[1], img.shape[0])  # width, height
     
+    # Process all right images (for stereo calibration)
+    successful_right = 0
+    stereo_pairs = min(len(objpoints), len(right_images)) if right_images else 0
+    
+    # Clear objpoints and rebuild paired points
+    objpoints_stereo = []
+    left_imgpoints_stereo = []
+    
+    if right_images:
+        for i, img_path in enumerate(right_images[:stereo_pairs]):
+            # Read image
+            img = cv2.imread(img_path)
+            if img is None:
+                print(f"Warning: Could not read image {img_path}")
+                continue
+                
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Apply enhanced detection methods from the working script
+            # 1. Apply bilateral filter to smooth while preserving edges
+            blurred = cv2.bilateralFilter(gray, 9, 75, 75)
+            
+            # 2. Apply adaptive thresholding
+            thresh = cv2.adaptiveThreshold(
+                blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                cv2.THRESH_BINARY, 11, 2
+            )
+            
+            # 3. Invert if needed (depending on which color is predominant)
+            if np.sum(thresh == 0) < np.sum(thresh == 255):
+                thresh = cv2.bitwise_not(thresh)
+            
+            # 4. Apply morphological operations to clean up noise
+            kernel = np.ones((3, 3), np.uint8)
+            thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+            thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+            
+            # Try to find the chessboard corners - first on threshold image
+            ret, corners = cv2.findChessboardCorners(thresh, pattern_size, None)
+            
+            # If that fails, try with enhanced contrast
+            if not ret:
+                # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+                clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                enhanced = clahe.apply(gray)
+                
+                # Try with enhanced image with special flags
+                ret, corners = cv2.findChessboardCorners(
+                    enhanced, pattern_size, 
+                    cv2.CALIB_CB_ADAPTIVE_THRESH + 
+                    cv2.CALIB_CB_NORMALIZE_IMAGE +
+                    cv2.CALIB_CB_FAST_CHECK
+                )
+                
+            # If corners found, add to data points
+            if ret:
+                successful_right += 1
+                
+                # For stereo calibration, we need matching pairs
+                if i < len(objpoints):
+                    objpoints_stereo.append(objpoints[i])
+                    left_imgpoints_stereo.append(left_imgpoints[i])
+                
+                    # Refine corner positions
+                    corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                    right_imgpoints.append(corners2)
+                    
+                    # Draw and display if in debug mode
+                    if debug_mode:
+                        drawn_img = img.copy()
+                        cv2.drawChessboardCorners(drawn_img, pattern_size, corners2, ret)
+                        
+                        # Resize if too large
+                        max_display_dim = 1200
+                        h, w = drawn_img.shape[:2]
+                        scale = min(1.0, max_display_dim / max(h, w))
+                        if scale < 1.0:
+                            display_size = (int(w * scale), int(h * scale))
+                            drawn_img = cv2.resize(drawn_img, display_size)
+                        
+                        cv2.imshow(f'Chessboard Corners: {os.path.basename(img_path)}', drawn_img)
+                        key = cv2.waitKey(500)  # Show briefly
+                        if key == 27:  # ESC key
+                            cv2.destroyAllWindows()
+                            break
+                            
+                    print(f"Found chessboard in {os.path.basename(img_path)}")
+                else:
+                    print(f"Found chessboard but no matching left image for {os.path.basename(img_path)}")
+            else:
+                print(f"Could not find chessboard in {os.path.basename(img_path)}")
+        
+        if debug_mode:
+            cv2.destroyAllWindows()
+        
+        print(f"Successfully detected chessboard in {successful_right}/{len(right_images)} right images")
+        print(f"Found {len(right_imgpoints)} stereo pairs")
+        
+        if len(right_imgpoints) < 5:
+            raise ValueError(f"Too few successful stereo pairs ({len(right_imgpoints)}). Need at least 5 pairs.")
+    
     # Calibrate left/mono camera
     ret_left, mtx_left, dist_left, rvecs_left, tvecs_left = cv2.calibrateCamera(
         objpoints, left_imgpoints, img_size, None, None)
@@ -138,85 +259,6 @@ def calibrate_cameras(left_images, right_images=None, pattern_size=(7, 7),
             'calibration_error': ret_left
         }
     
-    # Process all right images (for stereo calibration)
-    successful_right = 0
-    stereo_pairs = min(len(objpoints), len(right_images))
-    
-    # Clear objpoints and rebuild paired points
-    objpoints_stereo = []
-    left_imgpoints_stereo = []
-    
-    for i, img_path in enumerate(right_images[:stereo_pairs]):
-        # Read image
-        img = cv2.imread(img_path)
-        if img is None:
-            print(f"Warning: Could not read image {img_path}")
-            continue
-            
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
-        # Try adaptive preprocessing to enhance chessboard pattern
-        processed_gray = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-        )
-        
-        # Find chessboard corners
-        ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
-        
-        # If standard method fails, try with processed image
-        if not ret:
-            ret, corners = cv2.findChessboardCorners(
-                processed_gray, pattern_size, 
-                cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
-            )
-            
-        # If corners found, add to data points
-        if ret:
-            successful_right += 1
-            
-            # For stereo calibration, we need matching pairs
-            if i < len(objpoints):
-                objpoints_stereo.append(objpoints[i])
-                left_imgpoints_stereo.append(left_imgpoints[i])
-            
-                # Refine corner positions
-                corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                right_imgpoints.append(corners2)
-                
-                # Draw and display if in debug mode
-                if debug_mode:
-                    drawn_img = img.copy()
-                    cv2.drawChessboardCorners(drawn_img, pattern_size, corners2, ret)
-                    
-                    # Resize if too large
-                    max_display_dim = 1200
-                    h, w = drawn_img.shape[:2]
-                    scale = min(1.0, max_display_dim / max(h, w))
-                    if scale < 1.0:
-                        display_size = (int(w * scale), int(h * scale))
-                        drawn_img = cv2.resize(drawn_img, display_size)
-                    
-                    cv2.imshow(f'Chessboard Corners: {os.path.basename(img_path)}', drawn_img)
-                    key = cv2.waitKey(500)  # Show briefly
-                    if key == 27:  # ESC key
-                        cv2.destroyAllWindows()
-                        break
-                        
-                print(f"Found chessboard in {os.path.basename(img_path)}")
-            else:
-                print(f"Found chessboard but no matching left image for {os.path.basename(img_path)}")
-        else:
-            print(f"Could not find chessboard in {os.path.basename(img_path)}")
-    
-    if debug_mode:
-        cv2.destroyAllWindows()
-    
-    print(f"Successfully detected chessboard in {successful_right}/{len(right_images)} right images")
-    print(f"Found {len(right_imgpoints)} stereo pairs")
-    
-    if len(right_imgpoints) < 5:
-        raise ValueError(f"Too few successful stereo pairs ({len(right_imgpoints)}). Need at least 5 pairs.")
-    
     # Calibrate right camera
     ret_right, mtx_right, dist_right, rvecs_right, tvecs_right = cv2.calibrateCamera(
         objpoints_stereo, right_imgpoints, img_size, None, None)
@@ -235,7 +277,7 @@ def calibrate_cameras(left_images, right_images=None, pattern_size=(7, 7),
     # If baseline is provided, scale translation vector
     if baseline:
         # Calculate scale factor
-        current_baseline = abs(T[0])
+        current_baseline = float(abs(T[0, 0]))  # Access specific element with proper indexing
         scale_factor = baseline / current_baseline
         
         print(f"Scaling translation: Current baseline={current_baseline:.2f}mm, Target={baseline:.2f}mm")
@@ -243,7 +285,7 @@ def calibrate_cameras(left_images, right_images=None, pattern_size=(7, 7),
         T = T * scale_factor
     else:
         # Use calibrated baseline
-        baseline = abs(T[0])
+        baseline = float(abs(T[0, 0]))  # Access specific element with proper indexing
     
     print(f"Final baseline: {baseline:.2f}mm")
     
@@ -400,8 +442,8 @@ def print_calibration_parameters(calibration_data):
     if 'stereo' in calibration_data:
         stereo = calibration_data['stereo']
         print("\nStereo Parameters:")
-        print(f"Baseline: {stereo['baseline']:.2f} mm")
-        print(f"Calibration Error: {stereo['calibration_error']:.6f}")
+        print(f"  Baseline: {stereo['baseline']:.2f} mm")
+        print(f"  Calibration Error: {stereo['calibration_error']:.6f}")
         
         # Rotation matrix
         print("\nRotation Matrix (R):")
@@ -446,18 +488,44 @@ def save_calibration(calibration_data, output_dir='.'):
     print(f"  Mono parameters: {mono_file}")
     print(f"  Text summary: {txt_file}")
 
+def extract_inner_edge_points(corners2, pattern_size):
+    """
+    Extracts the points along the inner edges (top, bottom, left, right rows/columns).
+    
+    Args:
+        corners2: Refined corner points from cv2.cornerSubPix
+        pattern_size: Chessboard pattern inner corners (width, height)
+    
+    Returns:
+        Dictionary with edge points
+    """
+    return {
+        'top_edge': corners2[0:pattern_size[0]].reshape(-1, 2),
+        'bottom_edge': corners2[-pattern_size[0]:].reshape(-1, 2),
+        'left_edge': corners2[::pattern_size[0]].reshape(-1, 2),
+        'right_edge': corners2[pattern_size[0]-1::pattern_size[0]].reshape(-1, 2)
+    }
+
 def main():
     parser = argparse.ArgumentParser(description='GoPro HERO11 Black Camera Calibration')
     
     # Input arguments
-    parser.add_argument('--left_imgs', required=True, help='Path pattern to left/mono camera images')
-    parser.add_argument('--right_imgs', help='Path pattern to right camera images (for stereo)')
-    parser.add_argument('--pattern_size', default='7x7', help='Chessboard pattern inner corners (width x height)')
-    parser.add_argument('--square_size', type=float, default=24.0, help='Chessboard square size in mm')
-    parser.add_argument('--baseline', type=float, help='Camera baseline in mm (if known)')
-    parser.add_argument('--output_dir', default='./calibration_results', help='Output directory')
-    parser.add_argument('--visualize', action='store_true', help='Visualize calibration results')
-    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    parser.add_argument('--left_imgs', required=True, 
+                       help='Path pattern to left/mono camera images (e.g., "data/calibration/left/*.jpg")')
+    parser.add_argument('--right_imgs', 
+                       help='Path pattern to right camera images (for stereo) (e.g., "data/calibration/right/*.jpg")')
+    parser.add_argument('--pattern_size', default='7x7', 
+                       help='Chessboard pattern inner corners (width x height)')
+    parser.add_argument('--square_size', type=float, default=24.0, 
+                       help='Chessboard square size in mm')
+    parser.add_argument('--baseline', type=float, 
+                       help='Camera baseline in mm (if known)')
+    parser.add_argument('--output_dir', default='./calibration_results', 
+                       help='Output directory')
+    parser.add_argument('--visualize', action='store_true', 
+                       help='Visualize calibration results')
+    parser.add_argument('--debug', action='store_true', 
+                       help='Enable debug mode')
     
     args = parser.parse_args()
     
@@ -465,7 +533,8 @@ def main():
     pattern_width, pattern_height = map(int, args.pattern_size.split('x'))
     pattern_size = (pattern_width, pattern_height)
     
-    # Get image paths
+    # Get image paths using glob (do this here instead of letting shell expand)
+    import glob
     left_images = sorted(glob.glob(args.left_imgs))
     right_images = sorted(glob.glob(args.right_imgs)) if args.right_imgs else None
     

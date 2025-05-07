@@ -1,0 +1,73 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="800" height="400" fill="#f5f5f5"/>
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="#333">Posicionamiento Correcto de Cámaras</text>
+  
+  <!-- Incorrect Setup -->
+  <g transform="translate(200, 120)">
+    <text x="0" y="-40" font-family="Arial" font-size="18" font-weight="bold" fill="#d32f2f">✗ INCORRECTO</text>
+    
+    <!-- Base -->
+    <rect x="-80" y="100" width="160" height="10" fill="#aaa"/>
+    
+    <!-- Left Camera -->
+    <g transform="translate(-60, 80)">
+      <rect x="-20" y="-20" width="40" height="30" rx="5" fill="#555"/>
+      <circle cx="0" cy="-5" r="8" fill="#333"/>
+      <path d="M-20,-15 L-15,-10 L15,-10 L20,-15 Z" fill="#777"/>
+    </g>
+    
+    <!-- Right Camera -->
+    <g transform="translate(60, 40)">
+      <rect x="-20" y="-20" width="40" height="30" rx="5" fill="#555"/>
+      <circle cx="0" cy="-5" r="8" fill="#333"/>
+      <path d="M-20,-15 L-15,-10 L15,-10 L20,-15 Z" fill="#777"/>
+    </g>
+    
+    <!-- Arrows and labels -->
+    <line x1="-60" x2="60" y1="70" y2="30" stroke="#d32f2f" stroke-width="2" stroke-dasharray="5,5"/>
+    <text x="0" y="70" font-family="Arial" font-size="14" text-anchor="middle" fill="#d32f2f">Desplazamiento vertical y en profundidad</text>
+  </g>
+  
+  <!-- Correct Setup -->
+  <g transform="translate(600, 120)">
+    <text x="0" y="-40" font-family="Arial" font-size="18" font-weight="bold" fill="#388e3c">✓ CORRECTO</text>
+    
+    <!-- Base -->
+    <rect x="-100" y="100" width="200" height="10" fill="#aaa"/>
+    
+    <!-- Left Camera -->
+    <g transform="translate(-70, 80)">
+      <rect x="-20" y="-20" width="40" height="30" rx="5" fill="#555"/>
+      <circle cx="0" cy="-5" r="8" fill="#333"/>
+      <path d="M-20,-15 L-15,-10 L15,-10 L20,-15 Z" fill="#777"/>
+    </g>
+    
+    <!-- Right Camera -->
+    <g transform="translate(70, 80)">
+      <rect x="-20" y="-20" width="40" height="30" rx="5" fill="#555"/>
+      <circle cx="0" cy="-5" r="8" fill="#333"/>
+      <path d="M-20,-15 L-15,-10 L15,-10 L20,-15 Z" fill="#777"/>
+    </g>
+    
+    <!-- Baseline measurement -->
+    <line x1="-70" x2="70" y1="110" y2="110" stroke="#388e3c" stroke-width="2"/>
+    <path d="M-70,110 L-70,115 M70,110 L70,115" stroke="#388e3c" stroke-width="2"/>
+    <text x="0" y="130" font-family="Arial" font-size="14" text-anchor="middle" fill="#388e3c">Baseline = 18-20 cm</text>
+    
+    <!-- Level indicator -->
+    <rect x="-40" y="50" width="80" height="15" fill="#fff" stroke="#333"/>
+    <circle cx="0" cy="57.5" r="6" fill="#388e3c"/>
+    <line x1="-30" x2="30" y1="57.5" y2="57.5" stroke="#333" stroke-width="1"/>
+    <text x="0" y="40" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">Nivel</text>
+  </g>
+  
+  <!-- Additional Notes -->
+  <text x="400" y="240" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Requisitos importantes:</text>
+  <text x="400" y="270" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">• Ambas cámaras a la misma altura</text>
+  <text x="400" y="295" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">• Perfectamente paralelas (misma dirección)</text>
+  <text x="400" y="320" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">• Montadas en un soporte rígido que no se mueva</text>
+  <text x="400" y="345" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">• Misma configuración en ambas cámaras</text>
+</svg>
