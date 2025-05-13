@@ -60,7 +60,7 @@ data/calibration/
 ### 3. Run Camera Calibration
 
 ```bash
-python calibration/gopro_calibration.py --left_imgs data/calibration/left*.jpg --right_imgs data/calibration/right*.jpg --pattern_size 7x7 --square_size 24.0 --output_dir results
+python calibration/gopro_calibration.py --left_imgs "data/calibration/left/*.jpg" --right_imgs "data/calibration/right/*.jpg" --pattern_size 7x7 --square_size 24.0 --output_dir results
 ```
 
 This will:
