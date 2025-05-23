@@ -13,7 +13,7 @@ Por esto, las fotos no se pueden combinar bien y el mapa de profundidad sale tod
 
 ### 1. Colocar las cámaras correctamente
 
-![Colocación correcta](./camera_positioning.svg)
+![Colocación correcta](./camera_positioning.png)
 
 - Poner las cámaras exactamente una al lado de la otra
 - A la misma altura (usar un nivel)
@@ -37,7 +37,7 @@ Por esto, las fotos no se pueden combinar bien y el mapa de profundidad sale tod
 
 2. **Tomar 20 pares de fotos** del tablero en estas posiciones:
 
-   ![Guía de posiciones](./chessboard_positions.svg)
+   ![Guía de posiciones](./chessboard_positions.png)
 
    - **5 fotos: Tablero en el centro cercano** (a 50-80 cm)
    - **5 fotos: Tablero en el centro lejano** (a 1.5-2 metros)
@@ -68,6 +68,6 @@ El mapa de profundidad tendrá colores:
 - Objetos cercanos: amarillo/rojo
 - Objetos lejanos: azul/verde
 
-![Mapa de profundidad bueno](./depth_map_example.svg)
+![Mapa de profundidad bueno](./depth_map_example.png)
 
 ¡Listo! Ahora las cámaras pueden ver en 3D como nuestros ojos. 👀
