@@ -1,0 +1,20 @@
+
+=== CALIBRATION PARAMETERS ===
+
+Monocular Parameters:
+Image size: 5568 x 4872 pixels
+
+Camera Matrix:
+  fx: 2602.65 pixels
+  fy: 2569.53 pixels
+  cx: 2800.06 pixels
+  cy: 2378.41 pixels
+
+Distortion Coefficients:
+  k1: 0.070162
+  k2: -0.219911
+  p1: 0.002509
+  p2: -0.001327
+  k3: 0.218408
+
+Horizontal Field of View: 93.86 degrees

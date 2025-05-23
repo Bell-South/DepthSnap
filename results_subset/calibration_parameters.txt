@@ -1,0 +1,34 @@
+
+=== CALIBRATION PARAMETERS ===
+
+Monocular Parameters:
+Image size: 5568 x 4872 pixels
+
+Camera Matrix:
+  fx: 2721.45 pixels
+  fy: 2688.02 pixels
+  cx: 2865.70 pixels
+  cy: 2287.43 pixels
+
+Distortion Coefficients:
+  k1: 0.249921
+  k2: -1.173840
+  p1: -0.006886
+  p2: -0.001621
+  k3: 2.160393
+
+Horizontal Field of View: 91.30 degrees
+
+Stereo Parameters:
+  Baseline: 560.00 mm
+  Calibration Error: 1.348919
+
+Rotation Matrix (R):
+[[ 0.99974564  0.02037416  0.00967254]
+ [-0.02042139  0.99977989  0.00480982]
+ [-0.00957241 -0.00500613  0.99994165]]
+
+Translation Vector (T):
+[[-560.        ]
+ [  13.05187536]
+ [ -50.16877417]]
